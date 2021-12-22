@@ -1,20 +1,24 @@
 import socket
+import sys
 
 TCP_IP = '127.0.0.1'
 TCP_PORT = 8000
 BUFFER_SIZE = 1024
-MESSAGE = "Hello, World! FROM TCP "
+message = "Hello, World! FROM TCP "
 
 if __name__ == '__main__':
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect((TCP_IP, TCP_PORT))
     print("Connection successful")
+    print("Type 'exit' to quit")
+    print(message)
 
-    data = s.send(bytes(MESSAGE, encoding='utf8'))
-    response = s.recv(BUFFER_SIZE)
+    while message.lower() != "exit":
+        data = s.send(bytes(message, encoding='utf8'))
+        response = s.recv(BUFFER_SIZE)
+        response_str = response.decode("utf-8")
+        print(response_str)
+        message = sys.stdin.readline()
 
-    print("Bytes sent:", data)
-    response_str = response.decode("utf-8")
-    print("Sent:", str(MESSAGE))
-    print("Received:", response_str)
+
     s.close()
