@@ -1,6 +1,18 @@
 import socket
+import ssl
 import threading
 import http.server
+import smtplib
+from decouple import config
+
+# Get email host, user email, and user password from .env file
+# .env file does not get uploaded to github, duh
+EMAIL_HOST = config('EMAIL_HOST')
+EMAIL_HOST_USER = config('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
+EMAIL_PORT = 465
+
+ssl_context = ssl.create_default_context()
 
 HOST = '127.0.0.1'
 TCP_PORT = 8000
@@ -25,16 +37,40 @@ class Chat:
         self.ftp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.ftp_socket.bind((HOST, FTP_PORT))
 
+        self.smtp_host = smtplib.SMTP_SSL(EMAIL_HOST, EMAIL_PORT, context=ssl_context)
+        self.smtp_host.login(EMAIL_HOST_USER, EMAIL_HOST_PASSWORD)
+
         self.client_history = {}
 
     def get_response(self, string, client) -> str:
         split_string = string.split()
-        if split_string[0] == 'email':
-            receiver_email = split_string[1]
-            # todo email body will be self.client_history[client_ip]
-            return "Email sent to " + receiver_email
+        if split_string and split_string[0] == 'email':
+            if len(split_string) > 1:
+                receiver_email = split_string[1]
+            else:
+                return "Please provide email to send to. Eg:email hello@who.dis"
+            if client in self.client_history:
+                body_text = ""
+                email_body_list = self.client_history[client]
+                for qa in email_body_list:
+                    body_text += qa
+                email_body = f"From: {EMAIL_HOST_USER}\r\nTo: {receiver_email}\r\n\r\n{body_text}"
+                try:
+                    print("Trying to send:", email_body)
+                    self.smtp_host.sendmail(EMAIL_HOST_USER, receiver_email, msg=email_body)
+                except:
+                    return f"Could not send email to receiver:{receiver_email}"
+
+                return "Email sent to " + receiver_email
+            else:
+                return "This client has no history with this chat, no email was sent."
         else:
-            return string + "THIS IS THE RESPONSE"
+            response = string + "THIS IS THE RESPONSE"
+            if client in self.client_history:
+                self.client_history[client].append("Q:" + string + "\nA:" + response + "\n")
+            else:
+                self.client_history[client] = ["Q:" + string + "\nA:" + response + "\n"]
+            return response
 
     def run(self):
         print("Starting server initialization")
@@ -53,21 +89,25 @@ class Chat:
         print("TCP Server initialized")
         while True:
             conn, _ = self.tcp_socket.accept()
+            peer_name = conn.getpeername()
+            client = peer_name[0] + str(peer_name[1])
+            print("TCP connection established with client:", client)
             try:
                 while conn:
                     data = conn.recv(1024)  # Maximum message length is 1024 bytes
                     if data:
                         # Converting the data from byte to string.
                         string_data = data.decode(encoding='utf-8')
+                        if string_data == 'exit':
+                            raise "exit"
                         print("Received via TCP:", string_data)
                         # Sending response
-                        peer_name = conn.getpeername()
-                        client = peer_name[0] + str(peer_name[1])
                         send_data = self.get_response(string_data, client)
                         conn.sendall(bytes(send_data, encoding='utf8'))
                         print("Sent back via TCP:", send_data)
 
             finally:
+                print(f"TCP connection with client:{client} was interrupted")
                 continue
 
     def run_udp(self):

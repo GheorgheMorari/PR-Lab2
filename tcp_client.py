@@ -13,12 +13,13 @@ if __name__ == '__main__':
     print("Type 'exit' to quit")
     print(message)
 
-    while message.lower() != "exit":
+    while True:
         data = s.send(bytes(message, encoding='utf8'))
+        if message == 'exit':
+            break
         response = s.recv(BUFFER_SIZE)
         response_str = response.decode("utf-8")
         print(response_str)
-        message = sys.stdin.readline()
-
+        message = sys.stdin.readline().strip('\n')
 
     s.close()
