@@ -43,6 +43,7 @@ class Chat:
         self.client_history = {}
 
     def get_response(self, string, client) -> str:
+        print(client)
         split_string = string.split()
         if split_string and split_string[0] == 'email':
             if len(split_string) > 1:
@@ -177,8 +178,7 @@ class HttpHandler(http.server.BaseHTTPRequestHandler):
         post_data = self.rfile.read(content_length)
         self._set_response()
 
-        peer_name = self.client_address
-        client = peer_name[0] + str(peer_name[1])
+        client = self.path
 
         response_data = chat.get_response(post_data.decode(encoding='utf-8'), client)
         self.wfile.write(bytes(response_data, encoding='utf-8'))
