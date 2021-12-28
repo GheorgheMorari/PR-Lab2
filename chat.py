@@ -7,6 +7,8 @@ from decouple import config
 
 # Get email host, user email, and user password from .env file
 # .env file does not get uploaded to github, duh
+from chatbot.chatbot import get_response
+
 EMAIL_HOST = config('EMAIL_HOST')
 EMAIL_HOST_USER = config('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
@@ -66,7 +68,7 @@ class Chat:
             else:
                 return "This client has no history with this chat, no email was sent."
         else:
-            response = string + "THIS IS THE RESPONSE"
+            response = get_response(string)
             if client in self.client_history:
                 self.client_history[client].append("Q:" + string + "\nA:" + response + "\n")
             else:
@@ -107,7 +109,7 @@ class Chat:
                         conn.sendall(bytes(send_data, encoding='utf8'))
                         print("Sent back via TCP:", send_data)
 
-            finally:
+            except:
                 print(f"TCP connection with client:{client} was interrupted")
                 continue
 
@@ -163,7 +165,7 @@ class Chat:
                         conn.sendall(bytes(string_contents, encoding='utf8'))
                         print("Sent back via FTP:", send_data)
 
-            finally:
+            except:
                 continue
 
 

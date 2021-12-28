@@ -1,0 +1,4 @@
+There should be a trained pytorch model here. It can be trained using the Training Model.ipynb file, or use the lame generic microsoft dialogpt.
+The reason it is not in this git, is because the model is big, and github does not accept any files bigger than 100MB in size.
+The model is around 500MB in size.
+Training is very slow. If you have the gpu horsepower, use the gpu. On my cpu i trained it for 2 epochs, and it took about 30 minutes to do that.
